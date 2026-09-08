@@ -52,21 +52,21 @@ The complete app works on 3 layers:
 ### 1. Preprocessing Layer
 The core file preprocessing pipeline operates in three main stages:
 
-a. Format Handling & Parsing: Supports multi-page PDFs alongside standard image formats (.jpg, .jpeg, .png, .tiff, .bmp, .webp).
-b. Standardization & Orientation: Fixes camera/scanner orientation tags and scales images to a uniform resolution.
-c. OpenCV Conversion: Outputs all processed pages as standardized BGR NumPy arrays.
+1. Format Handling & Parsing: Supports multi-page PDFs alongside standard image formats (.jpg, .jpeg, .png, .tiff, .bmp, .webp).
+2. Standardization & Orientation: Fixes camera/scanner orientation tags and scales images to a uniform resolution.
+3. OpenCV Conversion: Outputs all processed pages as standardized BGR NumPy arrays.
 
 ### 2. OCR & .pdf creation
 The module supports a dual-engine hybrid approach:
-a. Primary Engine (EasyOCR): Used for deep-learning-based, high-accuracy text extractions.
-b. Fallback Engine (Tesseract): Used as a secondary text extractor if EasyOCR encounters an error, as well as the generator for output searchable PDFs.
+1. Primary Engine (EasyOCR): Used for deep-learning-based, high-accuracy text extractions.
+2. Fallback Engine (Tesseract): Used as a secondary text extractor if EasyOCR encounters an error, as well as the generator for output searchable PDFs.
 
 ### 3. Compression Layer
 This layer takes the pdf and uses `ghost script` library to compress the pdf to less than 20mb pdf.
 
 ### Integration layer (main.py)
-Overview & WorkflowFile Scanning & User Selection: 
-a. Scans the target directory, presents matching document files, and prompts the user to select one.
-b. Page Ingestion: Uses preprocess_file to standardize pages into 300 DPI BGR OpenCV matrices.
-c. OCR & Text Extraction: Runs EasyOCR (with Marathi + English language models) across each page to output raw text, confidence scores, and bounding box positions.
-d. Searchable PDF Assembly: Generates searchable PDF bytes for each page via easyocr_to_pdf_bytes and merges them into a multi-page PDF output using pypdf.PdfWriter.
+Overview & WorkflowFile Scanning & User Selection:
+1. Scans the target directory, presents matching document files, and prompts the user to select one.
+2. Page Ingestion: Uses preprocess_file to standardize pages into 300 DPI BGR OpenCV matrices.
+3. OCR & Text Extraction: Runs EasyOCR (with Marathi + English language models) across each page to output raw text, confidence scores, and bounding box positions.
+4. Searchable PDF Assembly: Generates searchable PDF bytes for each page via easyocr_to_pdf_bytes and merges them into a multi-page PDF output using pypdf.PdfWriter.
