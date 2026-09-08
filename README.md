@@ -11,7 +11,8 @@ A GPU-accelerated, deep-learning OCR pipeline for processing complex legal docum
 You do not need to download the source code. You can run the pre-built, fully self-contained application using Podman or Docker.
 
 ### 1. Create a `compose.yaml` file:
-```yaml
+```
+yaml
 services:
   ocr:
     image: ghcr.io/swarro/ocr-app:latest
@@ -28,14 +29,15 @@ services:
 
 volumes:
   ocr_cache:
+```
 
-2. Start the Server:
-code Bash
-
+### 2. Start the Server:
+```
+bash
 podman-compose up -d
 
 Visit http://localhost:8501 in your browser to access the drag-and-drop web UI.
-code Code
+```
 
 ---
 
@@ -49,7 +51,8 @@ code Code
 
 Now, open your Fedora terminal inside your `WORK/OCR` folder and run these commands one by one to pack and upload your code:
 
-```bash
+```
+bash
 # 1. Initialize the directory as a Git repository
 git init
 
@@ -67,5 +70,6 @@ git remote add origin https://github.com/<YOUR-USERNAME>/ocr-app.git
 
 # 6. Push the code to GitHub!
 git push -u origin main
+```
 
 (It will ask for your GitHub username and the same Personal Access Token you used earlier).
