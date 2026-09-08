@@ -13,7 +13,9 @@ A GPU-accelerated, deep-learning OCR pipeline for processing legal court documen
 You do not need to download the source code. You can run the pre-built, fully self-contained application using Podman or Docker.
 In just 2 steps:
 
-### 1. Create a `compose.yaml` file:
+### 1. Download & Install Docker or Podman
+
+### 2. Create a `compose.yaml` file:
 ```
 services:
   ocr:
@@ -51,6 +53,10 @@ volumes:
 ### 2. Start the Server:
 ```
 podman-compose up -d
+```
+or
+```
+docker-compose up -d
 ```
 Visit http://localhost:8501 in your browser to access the drag-and-drop web UI.
 
