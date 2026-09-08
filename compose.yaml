@@ -1,0 +1,21 @@
+services:
+  ocr:
+    image: ocr
+    volumes:
+      - .:/app:z,U                             # Maps code with unprivileged user permissions
+      - ocr_cache:/home/appuser/.EasyOCR:z     # Persists downloaded EasyOCR models in a named volume
+    networks:
+      - public-hosting
+    devices:
+      - nvidia.com/gpu=all
+    security_opt:
+      - label=disable
+    stdin_open: true
+    tty: true
+
+networks:
+  public-hosting:
+    external: true
+
+volumes:
+  ocr_cache:                                   # Named volume for EasyOCR models

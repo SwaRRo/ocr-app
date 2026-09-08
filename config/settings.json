@@ -1,0 +1,7 @@
+{
+    "target_dpi": 300,
+    "ocr_language": "eng+mar",
+    "supported_extensions": [".pdf", ".jpg", ".jpeg", ".png", ".tiff", ".bmp", ".webp"],
+    "data_dir": "data",
+    "output_dir": "data/output"
+}

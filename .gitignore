@@ -1,0 +1,12 @@
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore environment variables / secrets
+.env
+
+# Ignore our private documents and outputs
+data/
+
+# Ignore the heavy AI models downloaded by EasyOCR
+easyocr_cache/
