@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     poppler-utils \
     fonts-freefont-ttf \
     libgl1 \
+    ghostscript \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 

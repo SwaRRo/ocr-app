@@ -6,6 +6,7 @@ from flask import Flask, request, render_template_string, send_file
 from pypdf import PdfReader, PdfWriter
 from core.processor import preprocess_file
 from core.ocr_engine import extract_text_from_matrix, ocr_matrix_to_pdf_bytes, flush_ocr_memory
+from core.pdf_handler import compress_pdf
 
 app = Flask(__name__)
 
@@ -120,11 +121,18 @@ def process():
         if not os.path.exists(output_dir):
             os.makedirs(output_dir, mode=0o700, exist_ok=True)
             
-        output_filename = f"{base_name}_searchable.pdf"
-        pdf_output_path = os.path.join(output_dir, output_filename)
+        # 1. Save the HEAVY initial PDF first
+        heavy_filename = f"{base_name}_heavy.pdf"
+        heavy_pdf_path = os.path.join(output_dir, heavy_filename)
         
-        with open(pdf_output_path, "wb") as f:
+        with open(heavy_pdf_path, "wb") as f:
             pdf_writer.write(f)
+            
+        # 2. COMPRESSION LAYER: Shrink the PDF using Ghostscript
+        compressed_filename = f"{base_name}_searchable.pdf"
+        compressed_pdf_path = os.path.join(output_dir, compressed_filename)
+        
+        compress_pdf(input_path=heavy_pdf_path, output_path=compressed_pdf_path, quality="ebook")
             
         combined_text = "\n\n--- PAGE BREAK ---\n\n".join(full_text_list)
         average_confidence = sum(accumulated_confidence) / len(accumulated_confidence) if accumulated_confidence else 0.0
@@ -134,7 +142,7 @@ def process():
             processed=True,
             text=combined_text,
             confidence=average_confidence,
-            output_filename=output_filename
+            output_filename=compressed_filename  # <-- Give the user the compressed file!
         )
         
     except Exception as e:
