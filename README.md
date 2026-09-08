@@ -22,12 +22,23 @@ services:
       - "8501:8501"
     volumes:
       - ocr_cache:/home/appuser/.EasyOCR:z     
-    #Delete the section below if your device doesn't have a Graphic card
+      
+    # OPTION A: For NVIDIA GPUs (Requires NVIDIA Container Toolkit / CDI)
     devices:
       - nvidia.com/gpu=all
     security_opt:
       - label=disable
       
+    # OPTION B: For AMD GPUs (Passes the Direct Rendering Interface)
+    # Note: The default image uses CUDA PyTorch. AMD GPUs will fallback to CPU processing.
+    # devices:
+    #   - /dev/kfd:/dev/kfd
+    #   - /dev/dri:/dev/dri
+    # group_add:
+    #   - video
+    #   - render
+
+    # If using without GPU : Delete or comment out ALL 'devices', 'security_opt', and 'group_add' lines above.
       
     stdin_open: true
     tty: true
