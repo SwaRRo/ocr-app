@@ -8,7 +8,7 @@ A GPU-accelerated, deep-learning OCR pipeline for processing legal court documen
 
 ---
 
-## How to Run the Container
+## How to Run the App
 
 You do not need to download the source code. You can run the pre-built, fully self-contained application using Podman or Docker.
 In just 2 steps:
