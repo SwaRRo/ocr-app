@@ -22,10 +22,13 @@ services:
       - "8501:8501"
     volumes:
       - ocr_cache:/home/appuser/.EasyOCR:z     
+    #Delete the section below if your device doesn't have a Graphic card
     devices:
       - nvidia.com/gpu=all
     security_opt:
       - label=disable
+      
+      
     stdin_open: true
     tty: true
 
