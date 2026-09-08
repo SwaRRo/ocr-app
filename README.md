@@ -11,9 +11,18 @@ A GPU-accelerated, deep-learning OCR pipeline for processing legal court documen
 ## How to Run the App
 
 You do not need to download the source code. You can run the pre-built, fully self-contained application using Podman or Docker.
-In just 2 steps:
+In just 3 steps:
 
 ### 1. Download & Install Docker or Podman
+
+Docker : 
+```
+https://www.docker.com/products/docker-desktop/
+```
+Podman :
+```
+https://podman.io/docs/installation
+```
 
 ### 2. Create a `compose.yaml` file:
 ```
@@ -50,7 +59,7 @@ volumes:
 ```
 
 
-### 2. Start the Server:
+### 3. Start the Server:
 ```
 podman-compose up -d
 ```
