@@ -18,8 +18,13 @@ def get_easyocr_reader(lang_codes: list):
     lang_key = tuple(sorted(lang_codes))
     if lang_key not in _easyocr_readers:
         import easyocr
-        print(f"   [debug] Initializing EasyOCR Reader into RAM for languages: {lang_codes}...")
-        _easyocr_readers[lang_key] = easyocr.Reader(lang_codes, gpu=True, quantize=True)
+        import torch
+        use_gpu = torch.cuda.is_available()
+        if use_gpu:
+            print(f"   [debug] NVIDIA GPU detected. Initializing EasyOCR on CUDA...")
+        else:
+            print(f"   [warning] No GPU detected. Initializing EasyOCR on CPU (this will be slower)...")
+        _easyocr_readers[lang_key] = easyocr.Reader(lang_codes, gpu=use_gpu, quantize=True)
     return _easyocr_readers[lang_key]
 
 def flush_ocr_memory():

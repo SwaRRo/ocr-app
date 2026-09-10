@@ -11,18 +11,13 @@ def pil_to_opencv(pil_image) -> np.ndarray:
     array = np.array(pil_image)
     return cv2.cvtColor(array, cv2.COLOR_RGB2BGR)
 
-def scale_image_dpi(image_matrix: np.ndarray, current_dpi: int, target_dpi: int = 300) -> np.ndarray:
-    """
-    Resizes image to 300 DPI but enforces a maximum width to prevent VRAM overflow.
-    """
-    MAX_WIDTH = 3000  # Safety ceiling to prevent GPU/RAM crashes
+def scale_image_dpi(image_matrix: np.ndarray, current_dpi: int, target_dpi: int = 200) -> np.ndarray:
+    MAX_WIDTH = 3000  # Safety ceiling to prevent VRAM overflow
     
-    # Calculate target dimensions
     scale_factor = target_dpi / current_dpi
     new_width = int(image_matrix.shape[1] * scale_factor)
     new_height = int(image_matrix.shape[0] * scale_factor)
     
-    # Enforce the safety ceiling
     if new_width > MAX_WIDTH:
         ratio = MAX_WIDTH / new_width
         new_width = MAX_WIDTH
@@ -30,7 +25,7 @@ def scale_image_dpi(image_matrix: np.ndarray, current_dpi: int, target_dpi: int 
     
     return cv2.resize(image_matrix, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
 
-def preprocess_file(file_path: str, target_dpi: int = 300) -> list:
+def preprocess_file(file_path: str, target_dpi: int = 200) -> list:
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"The input file path does not exist: {file_path}")
 
@@ -38,7 +33,6 @@ def preprocess_file(file_path: str, target_dpi: int = 300) -> list:
     bgr_matrices = []
 
     if ext == ".pdf":
-        # pdf2image handles scaling to target_dpi internally
         pil_pages = convert_from_path(file_path, dpi=target_dpi)
         for page in pil_pages:
             bgr_matrices.append(pil_to_opencv(page))
@@ -47,7 +41,6 @@ def preprocess_file(file_path: str, target_dpi: int = 300) -> list:
         img = Image.open(file_path)
         img = ImageOps.exif_transpose(img)
         
-        # Extract DPI
         dpi_info = img.info.get('dpi', (72, 72))
         current_dpi = dpi_info[0] if isinstance(dpi_info, (tuple, list)) else 72
         

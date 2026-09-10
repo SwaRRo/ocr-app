@@ -30,7 +30,11 @@ services:
     ports:
       - "8501:8501"
     volumes:
-      - ocr_cache:/home/appuser/.EasyOCR:z     
+      - ocr_cache:/home/appuser/.EasyOCR:z
+    deploy:
+      resources:
+        limits:
+          memory: 4000M
       
     # OPTION A: For NVIDIA GPUs (Requires NVIDIA Container Toolkit / CDI)
     devices:

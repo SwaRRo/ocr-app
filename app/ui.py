@@ -28,9 +28,9 @@ def background_worker():
         base_name = task['base_name']
 
         try:
-            TASKS[task_id]['status'] = "Preprocessing document (Scaling to 250 DPI)..."
+            TASKS[task_id]['status'] = "Preprocessing document (Scaling DPI)..."
             TASKS[task_id]['progress'] = 5
-            processed_pages = preprocess_file(temp_file_path, target_dpi=250)
+            processed_pages = preprocess_file(temp_file_path, target_dpi=200)
             
             pdf_writer = PdfWriter()
             ocr_lang = "eng+mar"
@@ -39,6 +39,11 @@ def background_worker():
             total_pages = len(processed_pages)
             
             for index, page_matrix in enumerate(processed_pages):
+                # Check if user cancelled task
+                if TASKS[task_id].get('cancelled', False):
+                    TASKS[task_id]['status'] = "Cancelled by user."
+                    break
+                
                 TASKS[task_id]['status'] = f"Running AI OCR on Page {index + 1} of {total_pages}..."
                 TASKS[task_id]['progress'] = int(5 + ((index / total_pages) * 80))
                 
@@ -50,8 +55,9 @@ def background_worker():
                 reader = PdfReader(io.BytesIO(page_pdf_bytes))
                 pdf_writer.add_page(reader.pages[0])
             
-                flush_ocr_memory()
-                
+            if TASKS[task_id].get('cancelled', False):
+                continue
+
             TASKS[task_id]['status'] = "Merging PDF layers..."
             TASKS[task_id]['progress'] = 85
             
@@ -98,7 +104,7 @@ HTML_TEMPLATE = """
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Enterprise Document OCR</title>
+    <title>Document OCR Pipeline</title>
     <style>
         body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; background-color: #f9f9f9; color: #333; }
         .card { background: white; padding: 25px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
@@ -108,6 +114,8 @@ HTML_TEMPLATE = """
         .btn-secondary:hover { background: #5a6268; }
         .btn-success { background: #28a745; }
         .btn-success:hover { background: #218838; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
         textarea { width: 100%; height: 250px; font-family: monospace; padding: 10px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; }
         .progress-container { margin: 15px 0; background: #eee; border-radius: 4px; height: 20px; overflow: hidden; }
         .progress-bar { background: #28a745; height: 100%; width: 0%; color: white; text-align: center; font-size: 14px; line-height: 20px; font-weight: bold; transition: width 0.3s ease; }
@@ -132,19 +140,25 @@ HTML_TEMPLATE = """
         <div class="progress-container">
             <div id="progress-bar" class="progress-bar">0%</div>
         </div>
+        <div style="margin-top: 20px;">
+            <button type="button" class="btn btn-danger" onclick="cancelTask()">Stop Processing</button>
+        </div>
     </div>
 
     <div class="card" id="results-card" style="display: none;">
-        <h3 style="color: #28a745;">Processing Complete!</h3>
-        <p><strong>OCR Confidence:</strong> <span id="conf-text"></span></p>
+        <h3 id="result-title" style="color: #28a745;">Processing Complete!</h3>
+        <p id="conf-container"><strong>OCR Confidence:</strong> <span id="conf-text"></span></p>
         <textarea id="result-text" readonly></textarea>
         <div style="margin-top: 20px;">
-            <a id="download-link" href="#" class="btn btn-success">Download Searchable PDF</a>
+            <a id="download-link" href="#" class="btn btn-success" style="display: none;">Download Searchable PDF</a>
             <button type="button" class="btn btn-secondary" onclick="resetUI()">Process Another Document</button>
         </div>
     </div>
 
     <script>
+        let currentTaskId = null;
+        let pollInterval = null;
+
         document.getElementById('upload-form').onsubmit = async function(e) {
             e.preventDefault();
             let fileInput = document.getElementById('file-input');
@@ -160,7 +174,8 @@ HTML_TEMPLATE = """
             let data = await response.json();
             
             if(data.task_id) {
-                pollStatus(data.task_id);
+                currentTaskId = data.task_id;
+                pollStatus(currentTaskId);
             } else {
                 alert("Upload failed.");
                 resetUI();
@@ -168,7 +183,7 @@ HTML_TEMPLATE = """
         };
 
         function pollStatus(taskId) {
-            let interval = setInterval(async () => {
+            pollInterval = setInterval(async () => {
                 let res = await fetch('/status/' + taskId);
                 let task = await res.json();
                 
@@ -177,22 +192,38 @@ HTML_TEMPLATE = """
                 document.getElementById('progress-bar').innerText = task.progress + '%';
 
                 if (task.status === 'Complete') {
-                    clearInterval(interval);
+                    clearInterval(pollInterval);
                     document.getElementById('loading-card').style.display = 'none';
                     document.getElementById('results-card').style.display = 'block';
+                    document.getElementById('result-title').style.color = '#28a745';
+                    document.getElementById('result-title').innerText = 'Processing Complete!';
+                    document.getElementById('conf-container').style.display = 'block';
                     document.getElementById('result-text').value = task.result_text;
                     document.getElementById('conf-text').innerText = task.confidence.toFixed(1) + '%';
+                    document.getElementById('download-link').style.display = 'inline-block';
                     document.getElementById('download-link').href = '/download/' + task.output_filename;
-                } else if (task.status.startsWith('Error')) {
-                    clearInterval(interval);
+                } else if (task.status.startsWith('Error') || task.status === 'Cancelled by user.') {
+                    clearInterval(pollInterval);
                     document.getElementById('loading-card').style.display = 'none';
-                    document.getElementById('upload-card').style.display = 'block';
-                    alert(task.status);
+                    document.getElementById('results-card').style.display = 'block';
+                    document.getElementById('result-title').style.color = '#dc3545';
+                    document.getElementById('result-title').innerText = task.status;
+                    document.getElementById('conf-container').style.display = 'none';
+                    document.getElementById('result-text').value = 'Task was stopped or failed.';
+                    document.getElementById('download-link').style.display = 'none';
                 }
             }, 1500);
         }
 
+        async function cancelTask() {
+            if (!currentTaskId) return;
+            await fetch('/cancel/' + currentTaskId, {method: 'POST'});
+            document.getElementById('status-text').innerText = 'Stopping process...';
+        }
+
         function resetUI() {
+            if (pollInterval) clearInterval(pollInterval);
+            currentTaskId = null;
             document.getElementById('results-card').style.display = 'none';
             document.getElementById('file-input').value = '';
             document.getElementById('result-text').value = '';
@@ -229,7 +260,8 @@ def process():
     task_id = uuid.uuid4().hex
     TASKS[task_id] = {
         "status": "Queued...",
-        "progress": 0
+        "progress": 0,
+        "cancelled": False
     }
     
     task_queue.put({
@@ -239,6 +271,13 @@ def process():
     })
 
     return jsonify({"task_id": task_id})
+
+@app.route("/cancel/<task_id>", methods=["POST"])
+def cancel(task_id):
+    if task_id in TASKS:
+        TASKS[task_id]['cancelled'] = True
+        return jsonify({"success": True})
+    return jsonify({"success": False}), 404
 
 @app.route("/status/<task_id>", methods=["GET"])
 def status(task_id):
