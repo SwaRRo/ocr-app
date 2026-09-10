@@ -3,6 +3,9 @@ import io
 import cv2
 import numpy as np
 import pytesseract
+import gc
+import torch
+import ctypes
 from PIL import Image
 
 # Global cache so multi-page documents process fast
@@ -16,7 +19,7 @@ def get_easyocr_reader(lang_codes: list):
     if lang_key not in _easyocr_readers:
         import easyocr
         print(f"   [debug] Initializing EasyOCR Reader into RAM for languages: {lang_codes}...")
-        _easyocr_readers[lang_key] = easyocr.Reader(lang_codes, gpu=True)
+        _easyocr_readers[lang_key] = easyocr.Reader(lang_codes, gpu=True, quantize=True)
     return _easyocr_readers[lang_key]
 
 def flush_ocr_memory():
@@ -26,22 +29,20 @@ def flush_ocr_memory():
     global _easyocr_readers
     _easyocr_readers.clear()  # Delete references to the loaded models
     
-    import gc
     gc.collect()  # Force Python to return the freed RAM to the Linux OS
     
     try:
-        import torch
         if torch.cuda.is_available():
             torch.cuda.empty_cache()  # Force PyTorch to return VRAM to the NVIDIA GPU
     except Exception:
         pass
         
     try:
-        import ctypes
         libc = ctypes.CDLL("libc.so.6")
         libc.malloc_trim(0)
     except Exception as e:
-        print (f" [warning] Could not run malloc_trim: {e}")
+        print(f"   [warning] Could not run malloc_trim: {e}")
+        
     print("   [debug] AI models flushed. RAM and VRAM successfully reclaimed.")
 
 def extract_text_from_matrix(image_matrix: np.ndarray, lang: str = "eng") -> tuple:
